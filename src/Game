@@ -1,7 +1,13 @@
 require 'gosu'
 
-SCREEN_HEIGHT = 1080
-SCREEN_WIDTH = 1920
+SCREEN_HEIGHT = 720
+SCREEN_WIDTH = 1280
+PLAYER_HEIGHT = 75
+PLAYER_WIDTH = 99
+
+module ZOrder
+  BACKGROUND, STARS, PLAYER, UI = *0..3
+end
 
 class Game < Gosu::Window
   def initialize
@@ -9,16 +15,27 @@ class Game < Gosu::Window
     self.caption = "Our Game"
 
     @x = 0
-    @background_width = 256
-    @background_height = 256
-
-    #@background_image = Gosu::Image.new("assets/Backgrounds/purple.png", :tileable => true)
+    @difficulty_multiplier = 1
 
     @player = Player.new
     @player.warp(960, 540)
+    @lives = @player.lives
+    #@background_image = Gosu::Image.new("assets/Backgrounds/purple.png", :tileable => true)
+    @score_image = Gosu::Image.new("assets/PNG/UI/playerLife1_blue.png", :tileable => true)
+    @x_image = Gosu::Image.new("assets/PNG/UI/numeralX.png", :tileable => true)
+    @lives_image = Gosu::Image.new("assets/PNG/UI/numeral#{@lives}.png", :tileable => true)
+
+    @font = Gosu::Font.new(40)
+    @time = Gosu.milliseconds
+    @score = 0
+
+    @asteroids = []
   end
 
   def update
+    if (Gosu.milliseconds - @time) % 1000 <= 15 * @difficulty_multiplier
+      @asteroids << Asteroid.new
+    end
     if Gosu.button_down? Gosu::KB_LEFT or Gosu::button_down? Gosu::GP_LEFT
       @player.turn_left
     end
@@ -28,13 +45,37 @@ class Game < Gosu::Window
     if Gosu.button_down? Gosu::KB_UP or Gosu::button_down? Gosu::GP_BUTTON_0
       @player.accelerate
     end
+
+    @score = (Gosu.milliseconds - @time) / 1000
+    @difficulty_multiplier = @score / 10
     @player.move
+
+    @asteroids.each { |asteroid|
+      asteroid.move
+      if(!isInvincible(@player) && checkCollision(asteroid))
+        @player.lives -= 1
+        if @player.lives <= 0
+          #show end screen
+          exit
+        end
+        @player.lastHitTime = Gosu.milliseconds
+        @lives_image = Gosu::Image.new("assets/PNG/UI/numeral#{@player.lives}.png", :tileable => true)
+      end
+    }
+
   end
 
   def draw
     @player.draw
     #@background_image.draw(@x, 0, 0)
+    for asteroid in @asteroids
+      asteroid.draw
+    end
+    @font.draw("Score: #{@score}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::YELLOW)
 
+    @score_image.draw(10, @font.height + 20, 0)
+    @x_image.draw(20 + @score_image.width, @font.height + 25, 0)
+    @lives_image.draw(@x_image.width + @score_image.width + 30, @font.height + 24, 0)
 
   end
 
@@ -46,13 +87,31 @@ class Game < Gosu::Window
     end
   end
 
+  def checkCollision(asteroid)
+    @asteroid = asteroid
+
+    ((@asteroid.x + @asteroid.width >= @player.x) && (@asteroid.x <= @player.x + PLAYER_WIDTH)) && ((@asteroid.y + @asteroid.height >= @player.y) && (@asteroid.y <= @player.y + PLAYER_HEIGHT))
+
+  end
+
+  def isInvincible(player)
+    @player = player
+    Gosu.milliseconds - @player.lastHitTime < 3000
+
+  end
+
 end
 
 class Player
+
+  attr_reader :x , :y
+  attr_accessor :lives, :lastHitTime
+
   def initialize
     @image = Gosu::Image.new("assets/PNG/playerShip1_blue.png")
     @x = @y = @vel_x = @vel_y = @angle = 0.0
-    @score = 0
+    @lives = 3
+    @lastHitTime = -3
   end
 
   def warp(x, y)
@@ -95,5 +154,66 @@ class Player
     @image.draw_rot(@x, @y, 1, @angle)
   end
 end
+
+
+class Asteroid
+
+  attr_reader :x , :y, :height, :width
+  def initialize
+    @random = Random.new
+    @randomNum = @random.rand(1...5)
+    @image = Gosu::Image.new("assets/PNG/Meteors/meteorBrown_big#{@randomNum}.png")
+    @height = @image.height
+    @width = @image.width
+
+    if @randomNum == 1
+      @x = -@width
+      @y = @random.rand(0...SCREEN_HEIGHT)
+      @vel_x = 2
+      @vel_y = @random.rand(-3...3)
+    elsif @randomNum == 2
+      @x = SCREEN_WIDTH
+      @y = @random.rand(0...SCREEN_HEIGHT)
+
+      @vel_x = -2
+      @vel_y = @random.rand(-3...3)
+    elsif @randomNum == 3
+      @x = @random.rand(0...SCREEN_WIDTH)
+      @y = -@height
+
+      @vel_x = @random.rand(-3...3)
+      @vel_y = 2
+    else
+      @x = @random.rand(0...SCREEN_WIDTH)
+      @y = SCREEN_HEIGHT
+
+      @vel_x = @random.rand(-3...3)
+      @vel_y = -2
+    end
+
+  end
+
+  def warp(x, y)
+    @x, @y = x, y
+  end
+
+  def move
+    @x += @vel_x
+    @y += @vel_y
+
+    if @x > SCREEN_WIDTH || @x < 0
+      #self = null
+    end
+    if @y > SCREEN_HEIGHT || @y < 0
+      #self = null
+    end
+
+  end
+
+    def draw
+      @image.draw(@x, @y, 1)
+    end
+end
+
 
 Game.new.show
