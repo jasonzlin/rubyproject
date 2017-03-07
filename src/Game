@@ -9,18 +9,95 @@ PLAYER_WIDTH = 95
 module ZOrder
   BACKGROUND, STARS, PLAYER, UI = *0..3
 end
+=begin
+class Menu
+  def initialize(window)
+    @window = window
+    @items = Array.new
 
-class Menu < Gosu::Window
-  def initialize
-    super SCREEN_WIDTH, SCREEN_HEIGHT
-    self.caption = 'Menu'
 
-    #todo: make game menu
-    Game.new.show
-    close
+   add_item(Gosu::Image.new(self, 'assets/MenuItems/PauseGame.png',  false), 100, 200, 1, lambda { puts 'Paused' }, Gosu::Image.new(self, 'assets/MenuItems/PauseGame.png', false))
+   add_item(Gosu::Image.new(self, 'assets/MenuItems/NewGame.png', false), 100, 300, 1, lambda { puts 'NewGame' }, Gosu::Image.new(self, 'assets/MenuItems/NewGame_hover.png', false))
+   add_item(Gosu::Image.new(self, 'assets/MenuItems/ResumeGame.png', false), 100, 400, 1, lambda { puts 'Resume Game' }, Gosu::Image.new(self, 'assets/MenuItems/ResumeGame_hover.png', false))
+   add_item(Gosu::Image.new(self, 'assets/MenuItems/ExitGame.png', false), 100, 500, 1, lambda { self.close }, Gosu::Image.new(self, 'assets/MenuItems/ExitGame_hover.png', false))
   end
 
-end
+  def add_item(image, x,y,z, callback, hover_image)
+    item = MenuItem.new(@window, image, x,y,z,callback,hover_image)
+    @items << item
+    self
+  end
+
+  def button_down (id)
+    if id == Gosu::MsLeft then
+      @menu.clicked
+    end
+  end
+
+  def draw
+      @items.each do |i|
+      i.draw
+      end
+  end
+  def update
+    @items.each do |i|
+      i.update
+    end
+  end
+
+  def clicked
+    @items.each do |i|
+        i.clicked
+      end
+  end
+  end
+
+  class MenuItem
+    HOVER_OFFSET = 3
+    def initialize(window, image, x,y,z, callback, hover_image= nil)
+      @window = window
+      @main_image = image
+      @hover_image = hover_image
+      @original_x = @x = x
+      @original_y = @y = y
+      @z = z
+      @callback = callback
+      @active_image = @main_image
+    end
+    def draw
+      @active_image.draw(@x, @y, @z)
+    end
+
+    def update
+      if is_mouse_hovering then
+        if !@hover_image.nil? then
+          @active_image = @hover_image
+        end
+
+        @x = @original_x + HOVER_OFFSET
+        @y = @original_y + HOVER_OFFSET
+      else
+        @active_image = @main_image
+        @x = @original_x
+        @y = @original_y
+      end
+    end
+
+    def is_mouse_hovering
+      mx = @window.mouse_x
+      my = @window.mouse_y
+
+      (mx >= @x and my >= @y) and (mx <= @x + @active_image.width) and (my <= @y + @active_image.height)
+    end
+
+    def clicked
+      if is_mouse_hovering then
+        @callback.call
+      end
+    end
+  end
+
+=end
 
 class Game < Gosu::Window
   def initialize
@@ -45,7 +122,7 @@ class Game < Gosu::Window
     @lastShotTime = Gosu.milliseconds
     @score = 0
 
-
+    @paused = false
     @asteroids = []
     @enemies = []
     @friendly_projectiles = []
@@ -53,6 +130,8 @@ class Game < Gosu::Window
   end
   #Added the WASD method of moving and removed the Gamepad buttons
   def update
+
+
     if (Gosu.milliseconds - @time) % 1000 <= 600 * @difficulty_multiplier && !isInvincible(@player)
       @asteroids << Asteroid.new
     end
@@ -61,6 +140,18 @@ class Game < Gosu::Window
       @enemy.angle = Gosu.angle(@player.x, @player.y, @enemy.x, @enemy.y)
       @enemy.vector = Vector[@player.x - @enemy.x, @player.y - @enemy.y, 0]
       @enemies << @enemy
+
+      @UFO = EnemyUFO.new(@player.playerPosition_x, @player.playerPosition_y)
+      @UFO.angle = Gosu.angle(@player.x, @player.y, @enemy.x, @enemy.y)
+      @UFO.vector = Vector[@player.x - @enemy.x, @player.y - @enemy.y, 0]
+      @enemies << @UFO
+
+      @Chaser = Chaser.new(@player.playerPosition_x, @player.playerPosition_y)
+      @Chaser.angle = Gosu.angle(@player.x, @player.y, @enemy.x, @enemy.y)
+      @Chaser.vector = Vector[@player.x - @enemy.x, @player.y - @enemy.y, 0]
+      @enemies << @Chaser
+
+
       @lastEnemySpawnTime = Gosu.milliseconds
     end
     if Gosu.button_down? Gosu::KB_LEFT or Gosu::button_down? Gosu::KB_A #Gosu::button_down? Gosu::GP_LEFT
@@ -76,7 +167,7 @@ class Game < Gosu::Window
     if Gosu.button_down?  Gosu::KB_DOWN or Gosu::button_down? Gosu::KB_S
       @player.reverse
     end
-    if Gosu::button_down? Gosu::KB_SPACE
+      if Gosu::button_down? Gosu::KB_SPACE
       #@player.shoot
       playerShoot
     end
@@ -84,6 +175,9 @@ class Game < Gosu::Window
     @score = (Gosu.milliseconds - @time) / 1000
     @difficulty_multiplier = @score / 25
     @player.move
+    @UFO
+    @Chaser
+
 
     @enemies.each { |enemy|
       enemy.move
@@ -164,12 +258,14 @@ class Game < Gosu::Window
 
   end
 
+=begin
   def button_down(id)
-    if id == Gosu::KB_ESCAPE
-      close
-    else
-      super
+    if id == Gosu::KbF10
+      @menu = Menu.new(self) #instantiate the menu, passing the Window in the constructor
     end
+  end
+
+=end
   end
 
   def checkCollision(object)
@@ -195,7 +291,7 @@ class Game < Gosu::Window
 
   def playerShoot()
 
-    if Gosu.milliseconds - @lastShotTime > 1000
+    if Gosu.milliseconds - @lastShotTime > 100
 
       @projectile = Projectile.new
       @projectile.x = @player.x
@@ -209,7 +305,6 @@ class Game < Gosu::Window
     end
   end
 
-end
 
 class Player
 
@@ -266,6 +361,14 @@ class Player
 
   def draw
     @image.draw_rot(@x, @y, 1, @angle)
+  end
+
+  def playerPosition_x
+    return @x
+  end
+
+  def playerPosition_y
+    return @y
   end
 end
 
@@ -329,6 +432,136 @@ class Asteroid
     end
 end
 
+class EnemyUFO #initially targets you but doesn't chase you
+  attr_reader :x , :y, :height, :width
+  attr_accessor :angle, :vector
+
+  def initialize(playerPosition_X, playerPosition_y)
+    @random = Random.new
+    @randomNum = @random.rand(1...5)
+    @image = Gosu::Image.new('assets/PNG/ufoBlue.png')
+    @x = @y = @vel_x = @vel_y = @angle = 0.0
+    @height = @image.height
+    @width = @image.width
+    @playerPosition_X = playerPosition_X
+    @playerPosition_Y = playerPosition_y
+
+
+    if @randomNum == 1
+      @x = -@width
+      @y = @random.rand(0...SCREEN_HEIGHT)
+      @vel_x = 1
+      @vel_y = @random.rand(-1...1)
+    elsif @randomNum == 2
+      @x = SCREEN_WIDTH
+      @y = @random.rand(0...SCREEN_HEIGHT)
+
+      @vel_x = -1
+      @vel_y = @random.rand(-1...1)
+    elsif @randomNum == 3
+      @x = @random.rand(0...SCREEN_WIDTH)
+      @y = -@height
+
+      @vel_x = @random.rand(-1...1)
+      @vel_y = 1
+    else
+      @x = @random.rand(0...SCREEN_WIDTH)
+      @y = SCREEN_HEIGHT
+
+      @vel_x = @random.rand(-1...1)
+      @vel_y = -1
+    end
+  end
+
+  def turn_left
+    @angle -= 2.5
+    @angle %= 360
+  end
+
+  def turn_right
+    @angle += 2.5
+    @angle %= 360
+  end
+
+  def move
+   @x += @vel_x * 0.005
+   @y += @vel_y *0.005
+
+    @vel_x = @playerPosition_X - @x
+    @vel_y = @playerPosition_Y - @y
+  end
+
+  def draw
+    @image.draw_rot(@x, @y, 1, @angle)
+  end
+
+end
+
+class Chaser #initially targets you but doesn't chase you
+  attr_reader :x , :y, :height, :width
+  attr_accessor :angle, :vector
+
+  def initialize(playerPosition_X, playerPosition_y)
+    @random = Random.new
+    @randomNum = @random.rand(1...5)
+    @image = Gosu::Image.new('assets/PNG/ufoRed.png')
+    @x = @y = @vel_x = @vel_y = @angle = 0.0
+    @height = @image.height
+    @width = @image.width
+    @playerPosition_X = playerPosition_X
+    @playerPosition_Y = playerPosition_y
+
+
+    if @randomNum == 1
+      @x = -@width
+      @y = @random.rand(0...SCREEN_HEIGHT)
+      @vel_x = 1
+      @vel_y = @random.rand(-1...1)
+    elsif @randomNum == 2
+      @x = SCREEN_WIDTH
+      @y = @random.rand(0...SCREEN_HEIGHT)
+
+      @vel_x = -1
+      @vel_y = @random.rand(-1...1)
+    elsif @randomNum == 3
+      @x = @random.rand(0...SCREEN_WIDTH)
+      @y = -@height
+
+      @vel_x = @random.rand(-1...1)
+      @vel_y = 1
+    else
+      @x = @random.rand(0...SCREEN_WIDTH)
+      @y = SCREEN_HEIGHT
+
+      @vel_x = @random.rand(-1...1)
+      @vel_y = -1
+    end
+  end
+
+  def turn_left
+    @angle -= 2.5
+    @angle %= 360
+  end
+
+  def turn_right
+    @angle += 2.5
+    @angle %= 360
+  end
+
+  def move
+    @x += @vel_x * 0.005
+    @y += @vel_y *0.005
+
+    @vel_x = @playerPosition_X - @x
+    @vel_y = @playerPosition_Y - @y
+  end
+
+  def draw
+    @image.draw_rot(@x, @y, 1, @angle)
+  end
+
+end
+
 class Enemy
 
   attr_reader :x , :y, :height, :width
@@ -341,6 +574,7 @@ class Enemy
     @x = @y = @vel_x = @vel_y = @angle = 0.0
     @height = @image.height
     @width = @image.width
+
 
     if @randomNum == 1
       @x = -@width
@@ -407,8 +641,8 @@ class Projectile
   end
 
   def move
-    @x += @vel_x
-    @y += @vel_y
+    @x += (@vel_x*10)
+    @y += (@vel_y*10)
 
   end
 
@@ -417,4 +651,5 @@ class Projectile
   end
 end
 
-Menu.new.show
+Game.new.show
+#Menu.new.show
