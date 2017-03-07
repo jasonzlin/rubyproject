@@ -51,7 +51,7 @@ class Game < Gosu::Window
     @friendly_projectiles = []
     @enemy_projectiles = []
   end
-
+  #Added the WASD method of moving and removed the Gamepad buttons
   def update
     if (Gosu.milliseconds - @time) % 1000 <= 600 * @difficulty_multiplier && !isInvincible(@player)
       @asteroids << Asteroid.new
@@ -63,14 +63,18 @@ class Game < Gosu::Window
       @enemies << @enemy
       @lastEnemySpawnTime = Gosu.milliseconds
     end
-    if Gosu.button_down? Gosu::KB_LEFT or Gosu::button_down? Gosu::GP_LEFT
+    if Gosu.button_down? Gosu::KB_LEFT or Gosu::button_down? Gosu::KB_A #Gosu::button_down? Gosu::GP_LEFT
       @player.turn_left
     end
-    if Gosu.button_down? Gosu::KB_RIGHT or Gosu::button_down? Gosu::GP_RIGHT
+    if Gosu.button_down? Gosu::KB_RIGHT or Gosu::button_down? Gosu::KB_D #or Gosu::button_down? Gosu::GP_RIGHT
       @player.turn_right
     end
-    if Gosu.button_down? Gosu::KB_UP or Gosu::button_down? Gosu::GP_BUTTON_0
+    if Gosu.button_down? Gosu::KB_UP or Gosu::button_down? Gosu::KB_W #or Gosu::button_down? Gosu::GP_BUTTON_0
       @player.accelerate
+    end
+    #added a reverse one
+    if Gosu.button_down?  Gosu::KB_DOWN or Gosu::button_down? Gosu::KB_S
+      @player.reverse
     end
     if Gosu::button_down? Gosu::KB_SPACE
       #@player.shoot
@@ -234,6 +238,11 @@ class Player
   def accelerate
     @vel_x += Gosu.offset_x(@angle, 0.5)
     @vel_y += Gosu.offset_y(@angle, 0.5)
+  end
+
+  def reverse
+      @vel_x += Gosu.offset_x(@angle, -0.5)
+      @vel_y += Gosu.offset_y(@angle, -0.5)
   end
 
   def move
