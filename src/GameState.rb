@@ -4,13 +4,14 @@ require 'matrix'
 PLAYER_HEIGHT = 70
 PLAYER_WIDTH = 95
 
+
 module ZOrder
   BACKGROUND, STARS, PLAYER, UI = *0..3
 end
 
 class GameState
   def initialize(window)
-
+    $lives =3
     @window = window
 
     @x = 0
@@ -18,11 +19,10 @@ class GameState
 
     @player = Player.new
     @player.warp(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
-    @lives = @player.lives
     #@background_image = Gosu::Image.new("assets/Backgrounds/purple.png", :tileable => true)
     @score_image = Gosu::Image.new("../assets/PNG/UI/playerLife1_blue.png", :tileable => true)
     @x_image = Gosu::Image.new("../assets/PNG/UI/numeralX.png", :tileable => true)
-    @lives_image = Gosu::Image.new("../assets/PNG/UI/numeral#{@lives}.png", :tileable => true)
+    @lives_image = Gosu::Image.new("../assets/PNG/UI/numeral#{$lives}.png", :tileable => true)
     @invincible_text = Gosu::Font.new(180)
 
     @font = Gosu::Font.new(40)
@@ -102,11 +102,17 @@ class GameState
 
 
       if(!isInvincible(@player) && checkCollision(enemy))
-        @player.lives -= 1
+        $lives -= 1
         @asteroids = []
         @enemies = []
-
+        if $lives <= 0
+          #show end screen
+          exit
+        end
+        @player.lastHitTime = Gosu.milliseconds
+        @lives_image = Gosu::Image.new("../assets/PNG/UI/numeral#{$lives}.png", :tileable => true)
       end
+
 
     }
 
@@ -131,15 +137,14 @@ class GameState
     @asteroids.each { |asteroid|
       asteroid.move
       if(!isInvincible(@player) && checkCollision(asteroid))
-        @player.lives -= 1
+        $lives -= 1
         @asteroids = []
         @enemies = []
-        if @player.lives <= 0
-          #show end screen
+        if $lives <= 0
           exit
         end
         @player.lastHitTime = Gosu.milliseconds
-        @lives_image = Gosu::Image.new("../assets/PNG/UI/numeral#{@player.lives}.png", :tileable => true)
+        @lives_image = Gosu::Image.new("../assets/PNG/UI/numeral#{$lives}.png", :tileable => true)
       end
     }
 
@@ -162,7 +167,7 @@ class GameState
       projectile.draw()
     end
 
-    @font.draw("Score: #{@score}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::YELLOW)
+    @font.draw("Time alive: #{@score}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::YELLOW)
 
     if isInvincible(@player)
       @invincible_text.draw(3 - ((Gosu.milliseconds - @player.lastHitTime) / 1000), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, ZOrder::UI, 1.0, 1.0, Gosu::Color::WHITE)
@@ -174,14 +179,6 @@ class GameState
 
   end
 
-=begin
-  def button_down(id)
-    if id == Gosu::KbF10
-      @menu = Menu.new(self) #instantiate the menu, passing the Window in the constructor
-    end
-  end
-
-=end
   end
 
   def checkCollision(object)
@@ -225,12 +222,11 @@ class GameState
 class Player
 
   attr_reader :x , :y, :angle
-  attr_accessor :lives, :lastHitTime
+  attr_accessor :lastHitTime
 
   def initialize
     @image = Gosu::Image.new("../assets/PNG/playerShip1_blue.png")
     @x = @y = @vel_x = @vel_y = @angle = 0.0
-    @lives = 3
     @lastHitTime = -3
   end
 
