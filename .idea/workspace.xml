@@ -86,7 +86,7 @@
         <entry file="file://$PROJECT_DIR$/src/StateMachine.rb">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="308">
-              <caret line="14" column="36" lean-forward="false" selection-start-line="14" selection-start-column="36" selection-end-line="14" selection-end-column="36" />
+              <caret line="14" column="36" lean-forward="false" selection-start-line="14" selection-start-column="36" selection-end-line="14" selection-end-column="36" 
               <folding />
             </state>
           </provider>
@@ -133,6 +133,7 @@
     </replaceStrings>
   </component>
   <component name="Git.Settings">
+    <option name="UPDATE_TYPE" value="MERGE" />
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="IdeDocumentHistory">
@@ -497,7 +498,14 @@
       <option name="project" value="LOCAL" />
       <updated>1488868170241</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Changed the Movement&#10;&gt; Removed the Gamepad buttons (because we're not using them anyway)&#10;&gt; Added a Reverse &#10;&gt; Added the WASD Method of moving&#10;&#10;Update 3 AM 3/7/2017&#10;Created EnemyUFO -&gt; targets your current position but doesn't chase you&#10;Created ChaserUFO -&gt; targets your current position #todolist will update it to chase you indefinitely&#10;Attempted to Create a Menu -&gt; not fully functioning yet notice many commented lines don't erase&#10;Added menu icons to be used for the Menu">
+      <created>1488885096165</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1488885096165</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TimeTrackingManager">
@@ -534,7 +542,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Changed the Movement&#10;&gt; Removed the Gamepad buttons (because we're not using them anyway)&#10;&gt; Added a Reverse &#10;&gt; Added the WASD Method of moving" />
-    <option name="LAST_COMMIT_MESSAGE" value="Changed the Movement&#10;&gt; Removed the Gamepad buttons (because we're not using them anyway)&#10;&gt; Added a Reverse &#10;&gt; Added the WASD Method of moving" />
+    <MESSAGE value="Changed the Movement&#10;&gt; Removed the Gamepad buttons (because we're not using them anyway)&#10;&gt; Added a Reverse &#10;&gt; Added the WASD Method of moving&#10;&#10;Update 3 AM 3/7/2017&#10;Created EnemyUFO -&gt; targets your current position but doesn't chase you&#10;Created ChaserUFO -&gt; targets your current position #todolist will update it to chase you indefinitely&#10;Attempted to Create a Menu -&gt; not fully functioning yet notice many commented lines don't erase&#10;Added menu icons to be used for the Menu" />
+    <option name="LAST_COMMIT_MESSAGE" value="Changed the Movement&#10;&gt; Removed the Gamepad buttons (because we're not using them anyway)&#10;&gt; Added a Reverse &#10;&gt; Added the WASD Method of moving&#10;&#10;Update 3 AM 3/7/2017&#10;Created EnemyUFO -&gt; targets your current position but doesn't chase you&#10;Created ChaserUFO -&gt; targets your current position #todolist will update it to chase you indefinitely&#10;Attempted to Create a Menu -&gt; not fully functioning yet notice many commented lines don't erase&#10;Added menu icons to be used for the Menu" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
