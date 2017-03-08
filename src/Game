@@ -210,6 +210,12 @@ class Game < Gosu::Window
           @friendly_projectiles.delete(projectile)
         end
       }
+      @enemies.each { |enemies|
+        if checkProjectile(projectile, enemies)
+          @enemies.delete(enemies)
+          @friendly_projectiles.delete(projectile)
+        end
+      }
     }
 
     @asteroids.each { |asteroid|
