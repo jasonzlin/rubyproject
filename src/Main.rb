@@ -1,8 +1,8 @@
 require 'gosu'
 
-require './GameState.rb'
-#require_relative 'highscoresstate.rb'
+require_relative '../src/GameState'
 require_relative '../src/MenuState'
+require_relative '../src/EndGameState'
 
 require_relative 'StateMachine'
 require_relative 'Z_ordinals'

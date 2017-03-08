@@ -3,6 +3,7 @@ module StateMachine
   @states = {
       game: GameState,
       mainmenu: MainMenuState,
+      endgame: EndGameState
       #highscores: HighScoresState,
       #playerselection: PlayerSelectionState
   }
