@@ -1,108 +1,17 @@
 require 'gosu'
 require 'matrix'
 
-SCREEN_HEIGHT = 1080
-SCREEN_WIDTH = 1920
 PLAYER_HEIGHT = 70
 PLAYER_WIDTH = 95
 
 module ZOrder
   BACKGROUND, STARS, PLAYER, UI = *0..3
 end
-=begin
-class Menu
+
+class GameState
   def initialize(window)
+
     @window = window
-    @items = Array.new
-
-
-   add_item(Gosu::Image.new(self, 'assets/MenuItems/PauseGame.png',  false), 100, 200, 1, lambda { puts 'Paused' }, Gosu::Image.new(self, 'assets/MenuItems/PauseGame.png', false))
-   add_item(Gosu::Image.new(self, 'assets/MenuItems/NewGame.png', false), 100, 300, 1, lambda { puts 'NewGame' }, Gosu::Image.new(self, 'assets/MenuItems/NewGame_hover.png', false))
-   add_item(Gosu::Image.new(self, 'assets/MenuItems/ResumeGame.png', false), 100, 400, 1, lambda { puts 'Resume Game' }, Gosu::Image.new(self, 'assets/MenuItems/ResumeGame_hover.png', false))
-   add_item(Gosu::Image.new(self, 'assets/MenuItems/ExitGame.png', false), 100, 500, 1, lambda { self.close }, Gosu::Image.new(self, 'assets/MenuItems/ExitGame_hover.png', false))
-  end
-
-  def add_item(image, x,y,z, callback, hover_image)
-    item = MenuItem.new(@window, image, x,y,z,callback,hover_image)
-    @items << item
-    self
-  end
-
-  def button_down (id)
-    if id == Gosu::MsLeft then
-      @menu.clicked
-    end
-  end
-
-  def draw
-      @items.each do |i|
-      i.draw
-      end
-  end
-  def update
-    @items.each do |i|
-      i.update
-    end
-  end
-
-  def clicked
-    @items.each do |i|
-        i.clicked
-      end
-  end
-  end
-
-  class MenuItem
-    HOVER_OFFSET = 3
-    def initialize(window, image, x,y,z, callback, hover_image= nil)
-      @window = window
-      @main_image = image
-      @hover_image = hover_image
-      @original_x = @x = x
-      @original_y = @y = y
-      @z = z
-      @callback = callback
-      @active_image = @main_image
-    end
-    def draw
-      @active_image.draw(@x, @y, @z)
-    end
-
-    def update
-      if is_mouse_hovering then
-        if !@hover_image.nil? then
-          @active_image = @hover_image
-        end
-
-        @x = @original_x + HOVER_OFFSET
-        @y = @original_y + HOVER_OFFSET
-      else
-        @active_image = @main_image
-        @x = @original_x
-        @y = @original_y
-      end
-    end
-
-    def is_mouse_hovering
-      mx = @window.mouse_x
-      my = @window.mouse_y
-
-      (mx >= @x and my >= @y) and (mx <= @x + @active_image.width) and (my <= @y + @active_image.height)
-    end
-
-    def clicked
-      if is_mouse_hovering then
-        @callback.call
-      end
-    end
-  end
-
-=end
-
-class Game < Gosu::Window
-  def initialize
-    super SCREEN_WIDTH, SCREEN_HEIGHT
-    self.caption = "Our Game"
 
     @x = 0
     @difficulty_multiplier = 1.0
@@ -111,10 +20,10 @@ class Game < Gosu::Window
     @player.warp(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2)
     @lives = @player.lives
     #@background_image = Gosu::Image.new("assets/Backgrounds/purple.png", :tileable => true)
-    @score_image = Gosu::Image.new("assets/PNG/UI/playerLife1_blue.png", :tileable => true)
-    @x_image = Gosu::Image.new("assets/PNG/UI/numeralX.png", :tileable => true)
-    @lives_image = Gosu::Image.new("assets/PNG/UI/numeral#{@lives}.png", :tileable => true)
-    @invincible_text = Gosu::Font.new(60)
+    @score_image = Gosu::Image.new("../assets/PNG/UI/playerLife1_blue.png", :tileable => true)
+    @x_image = Gosu::Image.new("../assets/PNG/UI/numeralX.png", :tileable => true)
+    @lives_image = Gosu::Image.new("../assets/PNG/UI/numeral#{@lives}.png", :tileable => true)
+    @invincible_text = Gosu::Font.new(180)
 
     @font = Gosu::Font.new(40)
     @time = Gosu.milliseconds
@@ -128,11 +37,11 @@ class Game < Gosu::Window
     @friendly_projectiles = []
     @enemy_projectiles = []
   end
+
   #Added the WASD method of moving and removed the Gamepad buttons
   def update
 
-
-    if (Gosu.milliseconds - @time) % 1000 <= 600 * @difficulty_multiplier && !isInvincible(@player)
+    if (Gosu.milliseconds - @time) % 1000 <= 60   * @difficulty_multiplier && !isInvincible(@player)
       @asteroids << Asteroid.new
     end
     if  (Gosu.milliseconds - @lastEnemySpawnTime) / 1000 > 2 && !isInvincible(@player)
@@ -173,7 +82,7 @@ class Game < Gosu::Window
     end
 
     @score = (Gosu.milliseconds - @time) / 1000
-    @difficulty_multiplier = @score / 25
+    @difficulty_multiplier = @score / 25.0
     @player.move
     @UFO
     @Chaser
@@ -210,7 +119,14 @@ class Game < Gosu::Window
           @friendly_projectiles.delete(projectile)
         end
       }
+      @enemies.each { |enemies|
+        if checkProjectile(projectile, enemies)
+          @enemies.delete(enemies)
+          @friendly_projectiles.delete(projectile)
+        end
+      }
     }
+
 
     @asteroids.each { |asteroid|
       asteroid.move
@@ -223,7 +139,7 @@ class Game < Gosu::Window
           exit
         end
         @player.lastHitTime = Gosu.milliseconds
-        @lives_image = Gosu::Image.new("assets/PNG/UI/numeral#{@player.lives}.png", :tileable => true)
+        @lives_image = Gosu::Image.new("../assets/PNG/UI/numeral#{@player.lives}.png", :tileable => true)
       end
     }
 
@@ -249,7 +165,7 @@ class Game < Gosu::Window
     @font.draw("Score: #{@score}", 10, 10, ZOrder::UI, 1.0, 1.0, Gosu::Color::YELLOW)
 
     if isInvincible(@player)
-      @invincible_text.draw(3 - ((Gosu.milliseconds - @player.lastHitTime) / 1000), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, ZOrder::UI, 1.0, 1.0, Gosu::Color::BLUE)
+      @invincible_text.draw(3 - ((Gosu.milliseconds - @player.lastHitTime) / 1000), SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, ZOrder::UI, 1.0, 1.0, Gosu::Color::WHITE)
     end
 
     @score_image.draw(10, @font.height + 20, 0)
@@ -312,7 +228,7 @@ class Player
   attr_accessor :lives, :lastHitTime
 
   def initialize
-    @image = Gosu::Image.new("assets/PNG/playerShip1_blue.png")
+    @image = Gosu::Image.new("../assets/PNG/playerShip1_blue.png")
     @x = @y = @vel_x = @vel_y = @angle = 0.0
     @lives = 3
     @lastHitTime = -3
@@ -379,7 +295,7 @@ class Asteroid
   def initialize
     @random = Random.new
     @randomNum = @random.rand(1...5)
-    @image = Gosu::Image.new("assets/PNG/Meteors/meteorBrown_big#{@randomNum}.png")
+    @image = Gosu::Image.new("../assets/PNG/Meteors/meteorBrown_big#{@randomNum}.png")
     @height = @image.height
     @width = @image.width
 
@@ -439,7 +355,7 @@ class EnemyUFO #initially targets you but doesn't chase you
   def initialize(playerPosition_X, playerPosition_y)
     @random = Random.new
     @randomNum = @random.rand(1...5)
-    @image = Gosu::Image.new('assets/PNG/ufoBlue.png')
+    @image = Gosu::Image.new('../assets/PNG/ufoBlue.png')
     @x = @y = @vel_x = @vel_y = @angle = 0.0
     @height = @image.height
     @width = @image.width
@@ -504,7 +420,7 @@ class Chaser #initially targets you but doesn't chase you
   def initialize(playerPosition_X, playerPosition_y)
     @random = Random.new
     @randomNum = @random.rand(1...5)
-    @image = Gosu::Image.new('assets/PNG/ufoRed.png')
+    @image = Gosu::Image.new('../assets/PNG/ufoRed.png')
     @x = @y = @vel_x = @vel_y = @angle = 0.0
     @height = @image.height
     @width = @image.width
@@ -570,7 +486,7 @@ class Enemy
   def initialize
     @random = Random.new
     @randomNum = @random.rand(1...5)
-    @image = Gosu::Image.new("assets/PNG/Enemies/enemyRed#{@randomNum}.png")
+    @image = Gosu::Image.new("../assets/PNG/Enemies/enemyRed#{@randomNum}.png")
     @x = @y = @vel_x = @vel_y = @angle = 0.0
     @height = @image.height
     @width = @image.width
@@ -629,7 +545,7 @@ class Projectile
   def initialize
     @random = Random.new
     @randomNum = @random.rand(1...5)
-    @image = Gosu::Image.new("assets/PNG/Lasers/laserBlue01.png")
+    @image = Gosu::Image.new("../assets/PNG/Lasers/laserBlue01.png")
     @height = @image.height
     @width = @image.width
     @angle
@@ -650,6 +566,3 @@ class Projectile
     @image.draw_rot(@x, @y, ZOrder::BACKGROUND, @angle)
   end
 end
-
-Game.new.show
-#Menu.new.show
